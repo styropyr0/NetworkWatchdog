@@ -11,6 +11,10 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
+/**
+ * @author Saurav Sajeev | 04 Dec 2024
+ */
+
 class NetworkWatchdog(private val context: Context) {
 
     private val connectivityManager =
@@ -19,7 +23,6 @@ class NetworkWatchdog(private val context: Context) {
 
     private var isConnected = false
     private var isMetered = false
-    private var isNoInternetAccess = false
     private var isConnectedToInternet = false
     private var isConnectedToVPN = false
     private var lastNetwork: Network? = null
@@ -100,13 +103,13 @@ class NetworkWatchdog(private val context: Context) {
         }
     }
 
-    fun isNetworkConnected() = isConnected
-    fun isMeteredConnection() = isMetered
-    fun isNoInternetAccess() = isNoInternetAccess
-    fun isConnectedToVPN() = isConnectedToVPN
-    fun getLinkProperties(): LinkProperties? = linkProperties
-    fun getCurrentNetwork(): Network? = currentNetwork
-    fun getLastNetwork(): Network? = lastNetwork
+    internal fun isNetworkConnected() = isConnected
+    internal fun isMeteredConnection() = isMetered
+    internal fun isInternetAccessible() = isConnectedToInternet
+    internal fun isConnectedToVPN() = isConnectedToVPN
+    internal fun getLinkProperties(): LinkProperties? = linkProperties
+    internal fun getCurrentNetwork(): Network? = currentNetwork
+    internal fun getLastNetwork(): Network? = lastNetwork
 
     internal fun stopWatching() {
         if (isWatching) {

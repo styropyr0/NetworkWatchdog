@@ -3,18 +3,14 @@ package com.matrix.testproject
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import com.matrix.network_watchdog.NetworkWatchdog
 import com.matrix.network_watchdog.viewModel.ConnectivityViewModel
 import com.matrix.network_watchdog.viewModel.ConnectivityViewModelFactory
-import com.matrix.network_watchdog.viewModel.NetworkState
-import kotlinx.coroutines.flow.collectLatest
 
 class MainActivity : AppCompatActivity() {
     private val connectivityViewModel: ConnectivityViewModel by viewModels {
