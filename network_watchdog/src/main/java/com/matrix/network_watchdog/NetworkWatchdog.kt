@@ -2,6 +2,7 @@ package com.matrix.network_watchdog
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.util.Log
@@ -16,6 +17,15 @@ class NetworkWatchdog(private val context: Context) {
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
+    private var isConnected = false
+    private var isMetered = false
+    private var isNoInternetAccess = false
+    private var isConnectedToInternet = false
+    private var isConnectedToVPN = false
+    private var lastNetwork: Network? = null
+    private var currentNetwork: Network? = null
+    private var linkProperties: LinkProperties? = null
+
     private var isWatching = false
 
     internal fun observeNetworkState(
@@ -23,7 +33,8 @@ class NetworkWatchdog(private val context: Context) {
         onDisconnected: () -> Unit = {},
         onNoInternetAccess: () -> Unit = {},
         onMeteredConnection: () -> Unit = {},
-        onVPNConnection: () -> Unit = {}
+        onVPNConnection: () -> Unit = {},
+        onLinkPropertiesChanged: () -> Unit = {}
     ): Flow<NetworkState> = callbackFlow {
 
         if (isWatching) close()
@@ -34,6 +45,10 @@ class NetworkWatchdog(private val context: Context) {
                 super.onAvailable(network)
                 trySend(NetworkState.Connected).isSuccess
                 Log.d("NetworkWatchdog", "Network is available")
+                isConnected = true
+                if (currentNetwork != null)
+                    lastNetwork = currentNetwork
+                currentNetwork = network
                 onConnected()
             }
 
@@ -41,6 +56,7 @@ class NetworkWatchdog(private val context: Context) {
                 super.onLost(network)
                 trySend(NetworkState.Disconnected).isSuccess
                 Log.d("NetworkWatchdog", "Network is lost")
+                lastNetwork = currentNetwork
                 onDisconnected()
             }
 
@@ -49,21 +65,31 @@ class NetworkWatchdog(private val context: Context) {
                 networkCapabilities: NetworkCapabilities
             ) {
                 super.onCapabilitiesChanged(network, networkCapabilities)
-                val hasInternet =
-                    networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
-                val isVPN =
+                isConnectedToInternet =
+                    !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                isConnectedToVPN =
                     !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
-                val isMetered =
+                isMetered =
                     !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-                trySend(if (hasInternet) NetworkState.Connected else NetworkState.NoInternetAccess).isSuccess
-                Log.d("NetworkWatchdog", "Network capabilities changed: $hasInternet")
+                trySend(if (isConnectedToInternet) NetworkState.Connected else NetworkState.NoInternetAccess).isSuccess
+                Log.d("NetworkWatchdog", "Network capabilities changed: $isConnectedToInternet")
 
-                if (!hasInternet) onNoInternetAccess()
+                if (currentNetwork != null)
+                    lastNetwork = currentNetwork
+                currentNetwork = network
+
+                if (isConnectedToInternet) onNoInternetAccess()
                 else onConnected()
 
-                if (isVPN) onVPNConnection()
+                if (isConnectedToVPN) onVPNConnection()
 
                 if (isMetered) onMeteredConnection()
+            }
+
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+                super.onLinkPropertiesChanged(network, linkProperties)
+                this@NetworkWatchdog.linkProperties = linkProperties
+                onLinkPropertiesChanged()
             }
         }
 
@@ -73,6 +99,14 @@ class NetworkWatchdog(private val context: Context) {
             stopWatching()
         }
     }
+
+    fun isNetworkConnected() = isConnected
+    fun isMeteredConnection() = isMetered
+    fun isNoInternetAccess() = isNoInternetAccess
+    fun isConnectedToVPN() = isConnectedToVPN
+    fun getLinkProperties(): LinkProperties? = linkProperties
+    fun getCurrentNetwork(): Network? = currentNetwork
+    fun getLastNetwork(): Network? = lastNetwork
 
     internal fun stopWatching() {
         if (isWatching) {
