@@ -18,10 +18,12 @@ class NetworkWatchdog(private val context: Context) {
 
     private var isWatching = false
 
-    fun observeNetworkState(
-        onConnected: () -> Unit,
-        onDisconnected: () -> Unit,
-        onNoInternetAccess: () -> Unit
+    internal fun observeNetworkState(
+        onConnected: () -> Unit = {},
+        onDisconnected: () -> Unit = {},
+        onNoInternetAccess: () -> Unit = {},
+        onMeteredConnection: () -> Unit = {},
+        onVPNConnection: () -> Unit = {}
     ): Flow<NetworkState> = callbackFlow {
 
         if (isWatching) close()
@@ -49,11 +51,19 @@ class NetworkWatchdog(private val context: Context) {
                 super.onCapabilitiesChanged(network, networkCapabilities)
                 val hasInternet =
                     networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                val isVPN =
+                    !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VPN)
+                val isMetered =
+                    !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
                 trySend(if (hasInternet) NetworkState.Connected else NetworkState.NoInternetAccess).isSuccess
                 Log.d("NetworkWatchdog", "Network capabilities changed: $hasInternet")
-                if (!hasInternet) {
-                    onNoInternetAccess()
-                } else onConnected()
+
+                if (!hasInternet) onNoInternetAccess()
+                else onConnected()
+
+                if (isVPN) onVPNConnection()
+
+                if (isMetered) onMeteredConnection()
             }
         }
 
@@ -64,7 +74,7 @@ class NetworkWatchdog(private val context: Context) {
         }
     }
 
-    fun stopWatching() {
+    internal fun stopWatching() {
         if (isWatching) {
             networkCallback?.let {
                 connectivityManager.unregisterNetworkCallback(it)

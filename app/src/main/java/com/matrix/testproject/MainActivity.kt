@@ -30,21 +30,27 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        val connectionSts = findViewById<TextView>(R.id.connectionStatus)
+        val meteredSts = findViewById<TextView>(R.id.meteredStatus)
+        val vpnSts = findViewById<TextView>(R.id.VPNStatus)
+
         connectivityViewModel.startWatching(
-            onConnected = { showStatus("Hey! You're online!", "#2CCE00") },
-            onDisconnected = { showStatus("Oops! You lost the connection!", "#FF2701") },
-            onNoInternetAccess = { showStatus("You have WiFi, but no actual internet!", "#DFC603") }
+            onConnected = { showStatus(connectionSts, "Hey! You're online!", "#2CCE00") },
+            onDisconnected = { showStatus(connectionSts, "Oops! You lost the connection!", "#FF2701") },
+            onNoInternetAccess = { showStatus(connectionSts, "You have WiFi, but no actual internet!", "#DFC603") },
+            onMeteredConnection = { showStatus(meteredSts, "You have a metered connection!", "#DFC603") },
+            onVPNConnection = { showStatus(vpnSts, "You have a VPN connection!", "#DFC603") }
         )
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        connectivityViewModel.stopWatching() // Stop watching when the activity is destroyed
+        connectivityViewModel.stopWatching()
     }
 
-    private fun showStatus(status: String, color: String) {
+    private fun showStatus(textView: TextView, status: String, color: String) {
         runOnUiThread {
-            findViewById<TextView>(R.id.status).apply{
+            textView.apply{
                 text = status
                 setTextColor(Color.parseColor(color))
             }
