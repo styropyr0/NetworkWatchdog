@@ -1,177 +1,226 @@
-# Network Watchdog
+# **Network Watchdog Library**
 
-**Network Watchdog** is a modern, lifecycle-aware library for monitoring network connectivity and internet availability in Android applications. Designed using **Kotlin Coroutines** and **Jetpack ViewModel**, it seamlessly integrates with your app's architecture and lifecycle to provide efficient, reliable, and thread-safe network state updates.
-
----
-
-## Why Use Network Watchdog?
-
-### Key Features:
-1. **Lifecycle-Aware Design**:  
-   Automatically starts and stops network monitoring based on the lifecycle of your activities and fragments, ensuring optimal resource usage and avoiding memory leaks.
-
-2. **Thread-Safe Updates**:  
-   Network state changes are processed off the main thread using **Kotlin Flows**, ensuring smooth application performance. UI updates are easily integrated by explicitly using `runOnUiThread`.
-
-3. **Comprehensive Internet Validation**:  
-   Goes beyond basic connectivity checks by validating active internet access using `NetworkCapabilities`.
-
-4. **State Management with ViewModel**:  
-   Network states (`Connected`, `Disconnected`, `NoInternetAccess`) are exposed as a **StateFlow**, allowing easy and efficient observation in your UI layer.
-
-5. **Optimized Resource Usage**:  
-   Uses **stateIn** to cache the latest network state, reducing redundant emissions and enhancing memory management.
-
-6. **Modern Android Development Practices**:  
-   Incorporates Kotlin, Coroutines, Jetpack ViewModel, and StateFlow for a clean, maintainable, and scalable implementation.
-
-### Advantages Over Other Alternatives:
-While other network monitoring solutions might be easier to implement, they often lack proper lifecycle management, may not differentiate between connectivity and internet availability, and can lead to resource leaks. Network Watchdog adheres to Android best practices to provide a robust and lifecycle-aware solution.
+The **Network Watchdog** library is a robust solution for monitoring network state changes in Android applications. It provides a flexible and lifecycle-aware way to track changes in network connectivity, including whether the device is connected, if the connection is metered, if there is internet access, or if a VPN connection is active. The library leverages **ViewModel** and **LiveData/Flow** for managing state changes efficiently and reacts in real-time to network changes.
 
 ---
 
-## Installation
+## **Key Features**
 
-Ensure your `build.gradle` (app level) includes the following dependencies:
+### **1. Lifecycle-Aware Network Monitoring**
+
+- The library integrates seamlessly with Android's **ViewModel** to ensure that network monitoring is lifecycle-aware, which is a key benefit for long-running tasks. This means it listens for network changes while the app is running and automatically cleans up when the activity/fragment lifecycle ends (e.g., on `onDestroy`).
+
+### **2. ViewModel Factory for Dependency Injection**
+- The library uses a custom **ViewModel Factory** (`ConnectivityViewModelFactory`) to inject `NetworkWatchdog` into `ConnectivityViewModel`. This approach ensures that dependencies like `NetworkWatchdog` are properly passed to the ViewModel, without using global variables or static instances.
+- This **ViewModel-based architecture** ensures that your network monitoring is encapsulated and reusable across different parts of the app, offering a clean separation of concerns.
+
+### **3. Real-Time Network State Monitoring**
+
+- **Network State**: Detects various states including:
+   - **Connected**: The device is connected to a network.
+   - **Disconnected**: No network connection is active.
+   - **No Internet Access**: Connected to a network, but no internet access is available.
+   - **Metered Connection**: Connection is metered (e.g., mobile data).
+   - **VPN Connection**: The device is connected to a VPN.
+
+### **4. Advanced Network Properties Access**
+- The library provides access to detailed **network properties** such as link properties, current and last connected network, metered connection status, and VPN status. This allows you to manage network conditions in a more fine-grained manner.
+
+---
+
+## **Installation**
+
+To include the **Network Watchdog** library in your project, follow the instructions below.
+
+### **In your `build.gradle` (Project-level)**
+
+Add JitPack repository to the `repositories` section if it's not already added.
+
 ```gradle
-implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1" // ViewModel
-implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3" // Coroutines
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
 ```
 
+### **In your `build.gradle` (App-level)**
+
+Add the following dependency to the `dependencies` section:
+
+```gradle
+dependencies {
+    implementation 'com.github.styropyr0:styro-network-watchdog:1.0.0'
+}
+```
+
+Or for **`build.gradle.kts`**:
+
+```kotlin
+dependencies {
+    implementation("com.github.styropyr0:styro-network-watchdog:1.0.0")
+}
+```
+
+### **In your `settings.gradle` (Project-level)**
+
+Add the following to your `settings.gradle` to enable JitPack.
+
+```gradle
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+Or for **`settings.gradle.kts`**:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
 ---
 
-## Getting Started
+## **How to Use**
 
-### Step 1: Initialize `NetworkWatchdog`
-Create an instance of `NetworkWatchdog` in your context:
+### **Step 1: Initializing `NetworkWatchdog`**
+
+To begin using the library, create an instance of the `NetworkWatchdog` class by passing the application context. This class is responsible for monitoring network changes.
+
 ```kotlin
 val networkWatchdog = NetworkWatchdog(context)
 ```
 
-### Step 2: Integrate `ConnectivityViewModel`
-The ViewModel handles network state updates. Use the provided factory to initialize it in your activity or fragment:
+---
+
+### **Step 2: Using `ConnectivityViewModel`**
+
+The recommended approach is to use the `ConnectivityViewModel` to handle network monitoring in a lifecycle-aware manner. This ensures that network monitoring is linked to the ViewModel's lifecycle, which is automatically cleaned up when the ViewModel is destroyed.
+
+#### **Setting up the ViewModel**
+
+You will need to use a **ViewModel Factory** (`ConnectivityViewModelFactory`) to pass the `NetworkWatchdog` dependency into your `ConnectivityViewModel`.
+
 ```kotlin
 private val connectivityViewModel: ConnectivityViewModel by viewModels {
     ConnectivityViewModelFactory(NetworkWatchdog(this))
 }
 ```
 
-### Step 3: Observe Network State
-Start monitoring the network state and handle UI updates safely:
+---
+
+### **Step 3: Start Monitoring Network State**
+
+#### **Using Callbacks**
+
+The library provides a function `startWatching` in the `ConnectivityViewModel` that allows you to register callback functions for different network states. Each callback will be triggered when the corresponding network state occurs.
+
 ```kotlin
 connectivityViewModel.startWatching(
-    onConnected = {
-        runOnUiThread { showToast("Connected to the Internet") }
-    },
-    onDisconnected = {
-        runOnUiThread { showToast("Disconnected from the Internet") }
-    },
-    onNoInternetAccess = {
-        runOnUiThread { showToast("No Internet Access") }
-    }
+    onConnected = { showStatus("You're online!", "#2CCE00") },
+    onDisconnected = { showStatus("You're offline!", "#FF2701") },
+    onNoInternetAccess = { showStatus("Connected to a network, but no internet!", "#DFC603") },
+    onMeteredConnection = { showStatus("Metered connection detected!", "#DFC603") },
+    onVPNConnection = { showStatus("VPN connection active!", "#DFC603") }
 )
-
-lifecycleScope.launchWhenStarted {
-    connectivityViewModel.networkState.collect { state ->
-        runOnUiThread {
-            when (state) {
-                is NetworkState.Connected -> updateUI("Connected")
-                is NetworkState.Disconnected -> updateUI("Disconnected")
-                is NetworkState.NoInternetAccess -> updateUI("No Internet Access")
-            }
-        }
-    }
-}
 ```
+
+This function will call the corresponding methods (`onConnected`, `onDisconnected`, etc.) when the network state changes, allowing you to handle each case differently.
+
+#### **Network State Management**
+
+Each callback method is responsible for updating your UI or performing actions based on the network state. Here's a breakdown of how the state is handled:
+
+- **onConnected**: Triggered when the device is connected to a network.
+- **onDisconnected**: Triggered when the device loses its network connection.
+- **onNoInternetAccess**: Triggered when the device is connected to a network but cannot access the internet (i.e., no internet access).
+- **onMeteredConnection**: Triggered when a metered network (like mobile data) is detected.
+- **onVPNConnection**: Triggered when a VPN connection is detected.
 
 ---
 
-## Implementation Details
+### **Step 4: Access Network Parameters**
 
-### Network Watchdog
-Uses `ConnectivityManager` and `NetworkCallback` to monitor network changes. The `observeNetworkState` function emits connectivity updates through a **Flow**, including validation for active internet access.
+The `ConnectivityViewModel` provides the method `accessNetworkParams()`, which returns a `NetworkParams` object that contains detailed information about the current network. This includes:
+- **Network connection status**: Whether the device is connected or disconnected.
+- **Metered connection status**: Whether the device is on a metered connection.
+- **Internet accessibility**: Whether the connected network has internet access.
+- **VPN status**: Whether the device is connected to a VPN.
+- **Link properties**: Advanced network parameters (e.g., IP addresses, DNS servers).
 
-### ConnectivityViewModel
-- Encapsulates network state management using a **StateFlow**.
-- Caches the latest network state using `stateIn`, ensuring efficient and lifecycle-aware updates.
-- Automatically manages network monitoring when the ViewModel is created or cleared.
-
-### StateFlow Integration
-Network Watchdog uses **StateFlow**, a lifecycle-aware reactive stream, to provide real-time updates. Observers are only notified when the activity or fragment is active, reducing unnecessary processing.
-
-### UI Safety with `runOnUiThread`
-Network callbacks are invoked on a background thread. To avoid threading issues when interacting with UI elements, all UI updates must be executed inside `runOnUiThread`. Example:
 ```kotlin
-runOnUiThread {
-    // Safely update the UI
-}
+val networkParams = connectivityViewModel.accessNetworkParams()
+println("Is Connected: ${networkParams.isConnected}")
+println("Is Metered: ${networkParams.isMetered}")
+println("Is Internet Accessible: ${networkParams.isInternetAccessible}")
+println("VPN Status: ${networkParams.isConnectedToVPN}")
+println("Link Properties: ${networkParams.linkProperties}")
 ```
 
 ---
 
-## Advantages of This Approach
+### **Step 5: Stop Monitoring**
 
-- **Lifecycle Awareness**: Automatically adapts to the lifecycle of your components.
-- **Efficient State Management**: Reduces overhead with `stateIn` and StateFlow.
-- **Scalable and Maintainable**: Designed for clean integration into modern Android architectures.
-- **Thread Safety**: Ensures that all background tasks are safely executed without affecting the main thread.
+It’s important to stop the network monitoring when it's no longer needed to prevent memory leaks. You can call `stopWatching()` in your activity/fragment's `onDestroy` method:
 
----
-
-## Example Usage
-
-The following demonstrates a complete integration:
 ```kotlin
-private val connectivityViewModel: ConnectivityViewModel by viewModels {
-    ConnectivityViewModelFactory(NetworkWatchdog(this))
-}
-
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    setContentView(R.layout.activity_main)
-
-    connectivityViewModel.startWatching(
-        onConnected = {
-            runOnUiThread { showToast("Connected to the Internet") }
-        },
-        onDisconnected = {
-            runOnUiThread { showToast("Disconnected from the Internet") }
-        },
-        onNoInternetAccess = {
-            runOnUiThread { showToast("No Internet Access") }
-        }
-    )
-
-    lifecycleScope.launchWhenStarted {
-        connectivityViewModel.networkState.collect { state ->
-            runOnUiThread {
-                when (state) {
-                    is NetworkState.Connected -> updateStatus("Connected")
-                    is NetworkState.Disconnected -> updateStatus("Disconnected")
-                    is NetworkState.NoInternetAccess -> updateStatus("No Internet Access")
-                }
-            }
-        }
-    }
+override fun onDestroy() {
+    super.onDestroy()
+    connectivityViewModel.stopWatching()
 }
 ```
 
 ---
 
-## Contribution
+## **Detailed Explanation of Key Functions**
 
-Contributions are welcome. Feel free to open issues for bug reports or feature requests, and submit pull requests for improvements.
+### **1. `NetworkWatchdog.observeNetworkState`**
+- **Purpose**: Monitors the network state and sends updates through a `Flow` object.
+- **Parameters**:
+   - Callbacks for each network state (connected, disconnected, no internet, metered, VPN, and link properties).
+- **How it works**:
+   - Registers a `NetworkCallback` with `ConnectivityManager` to listen for network state changes.
+   - Calls appropriate callbacks based on the network status.
+   - Uses `trySend` to emit network states through the `Flow` object.
+
+### **2. `ConnectivityViewModel.startWatching`**
+- **Purpose**: Sets up the network state monitoring and links it with the appropriate listener functions.
+- **Parameters**:
+   - Various listener callbacks (`onConnected`, `onDisconnected`, `onNoInternetAccess`, etc.).
+- **How it works**:
+   - Observes the network state changes from the `NetworkWatchdog` and invokes the corresponding callback functions.
+   - Updates the internal `_networkState` to reflect the current network state, allowing the UI to react to changes.
+
+### **3. `ConnectivityViewModel.accessNetworkParams`**
+- **Purpose**: Retrieves a bundle of network details like connection status, metered status, internet access, VPN status, and link properties.
+- **How it works**:
+   - Returns a `NetworkParams` object that encapsulates detailed information about the current and last connected networks, metered connection status, and more.
+
+### **4. `ConnectivityViewModel.stopWatching`**
+- **Purpose**: Stops the `NetworkWatchdog` from listening to network state changes.
+- **How it works**:
+   - Unregisters the `NetworkCallback` from `ConnectivityManager`, effectively stopping the monitoring process.
 
 ---
 
-## License
+## **Why Choose Network Watchdog?**
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+- **Lifecycle Awareness**: The library integrates with the **ViewModel** to manage network state monitoring in a lifecycle-aware manner. This ensures that resources are properly cleaned up when not needed.
+- **Seamless Integration**: It works well within Android's architecture components, using **LiveData** and **Flow** for reactive programming.
+- **Fine-Grained Control**: Offers detailed control over network events, including metered connections, VPN detection, and more.
+- **Simple Dependency Injection**: Uses a custom **ViewModel Factory** to inject dependencies efficiently, ensuring modularity and separation of concerns.
+- **Flexible Network Monitoring**: Supports both **callback-based** and **observer-based** (via LiveData/Flow) monitoring for maximum flexibility.
+- **No Global Dependencies**: The use of ViewModel ensures that dependencies are scoped and do not rely on global variables or static contexts.
 
 ---
 
-## Notes
+## **License**
 
-- Always use `runOnUiThread` for updating UI components in callbacks.
-- Use `ConnectivityViewModel` to manage network monitoring efficiently and lifecycle-safely.
-```
+This library is licensed under the **MIT License**.
