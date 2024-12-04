@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -51,7 +52,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.styropyr0"
                 artifactId = "styro-network-watchdog"
-                version = "1.0.2"
+                version = "1.0.0"
             }
         }
     }
