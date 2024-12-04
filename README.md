@@ -1,5 +1,7 @@
 # **Network Watchdog Library**
 
+**Latest version: 1.0.0**
+
 **Network Watchdog** is a modern, lifecycle-aware library for monitoring network connectivity and internet availability in Android applications. It is designed using **Kotlin Coroutines**, **Jetpack ViewModel**, and **Kotlin Flow**, providing an efficient, thread-safe solution for network state management. The library integrates seamlessly into your app’s architecture, offering both **callback-based** and **observer-based** methods for monitoring network status.
 
 ---
