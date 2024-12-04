@@ -1,6 +1,8 @@
 package com.matrix.testproject
 
+import android.graphics.Color
 import android.os.Bundle
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -29,9 +31,9 @@ class MainActivity : AppCompatActivity() {
             insets
         }
         connectivityViewModel.startWatching(
-            onConnected = { showToast("Connected to the Internet") },
-            onDisconnected = { showToast("Disconnected from the Internet") },
-            onNoInternetAccess = { showToast("No Internet Access") }
+            onConnected = { showStatus("Hey! You're online!", "#2CCE00") },
+            onDisconnected = { showStatus("Oops! You lost the connection!", "#FF2701") },
+            onNoInternetAccess = { showStatus("You have WiFi, but no actual internet!", "#DFC603") }
         )
     }
 
@@ -40,7 +42,12 @@ class MainActivity : AppCompatActivity() {
         connectivityViewModel.stopWatching() // Stop watching when the activity is destroyed
     }
 
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun showStatus(status: String, color: String) {
+        runOnUiThread {
+            findViewById<TextView>(R.id.status).apply{
+                text = status
+                setTextColor(Color.parseColor(color))
+            }
+        }
     }
 }
