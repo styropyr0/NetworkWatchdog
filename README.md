@@ -45,7 +45,7 @@ Add the following to your `build.gradle` (app-level):
 
 ```gradle
 dependencies {
-    implementation 'com.github.styropyr0:styro-network-watchdog:1.0.0'
+    implementation 'com.github.styropyr0:NetworkWatchdog:v1.0.0'
 }
 ```
 
