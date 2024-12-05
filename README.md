@@ -48,6 +48,7 @@ dependencies {
     implementation 'com.github.styropyr0:NetworkWatchdog:v1.0.0'
 }
 ```
+or for `app:build.gradle.kts`
 
 ```kotlin
 dependencies {
@@ -66,6 +67,7 @@ dependencyResolutionManagement {
     }
 }
 ```
+or for `settings.gradle.kts`
 
 ```kotlin
 dependencyResolutionManagement {
