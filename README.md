@@ -123,8 +123,8 @@ lifecycleScope.launchWhenStarted {
                 is NetworkState.Connected -> updateStatus("Connected")
                 is NetworkState.Disconnected -> updateStatus("Disconnected")
                 is NetworkState.NoInternetAccess -> updateStatus("No Internet Access")
-                is NetworkState.Metered -> updateStatus("Metered Network")
-                is NetworkState.VPN -> updateStatus("VPN Connected")
+                is NetworkState.MeteredConnection -> updateStatus("Metered Network")
+                is NetworkState.VPNConnection -> updateStatus("VPN Connected")
             }
         }
     }
