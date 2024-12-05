@@ -49,6 +49,12 @@ dependencies {
 }
 ```
 
+```kotlin
+dependencies {
+    implementation("com.github.styropyr0:CustomizableDatePicker:1.1")
+}
+```
+
 ### Project-level `settings.gradle`
 
 ```gradle
@@ -59,6 +65,16 @@ dependencyResolutionManagement {
         maven { url 'https://jitpack.io' }
     }
 }
+```
+
+```kotlin
+dependencyResolutionManagement {
+		repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+		repositories {
+			mavenCentral()
+			maven { url = uri("https://jitpack.io") }
+		}
+	}
 ```
 
 ---
