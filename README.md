@@ -52,7 +52,7 @@ or for `app:build.gradle.kts`
 
 ```kotlin
 dependencies {
-    implementation("com.github.styropyr0:CustomizableDatePicker:1.1")
+    implementation("com.github.styropyr0:NetworkWatchdog:v1.0.0")
 }
 ```
 
